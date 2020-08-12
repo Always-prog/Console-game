@@ -15,18 +15,23 @@ class Game():
         self.BACKGROUND = background
         self.OBJECTS = objects
         self.OUTPUT_IMAGE = self.BACKGROUND
-        self.INDEX_MOVE_OBJECTS_Y = 0
-        self.INDEX_MOVE_OBJECTS_X = 0
         self.OPTIONS_SHOW = True
         self.OPTIONS_VIEW = "------\n|000|\n------"
         self.OPTIONS_IMAGE = "------\n|000|\n------"
         self.JSON_IMAGES = json.load(open(self.DIR_IMAGES,"r"))
+        self.WALK_LEFT_PLAYER = False
+        self.WALK_RIGHT_PLAYER = False
+        self.WALK_UP_PLAYER = False
+        self.WALK_DOWN_PLAYER = False
         self.PLAYER = {"img": self.JSON_IMAGES["player_images"]["normal"],
                        "x": 15,
                        "y": 8,
+                       "walk_left_sprites":self.JSON_IMAGES["player_images"]["walk_left"],
+                       "walk_right_sprites":self.JSON_IMAGES["player_images"]["walk_right"],
                        "hungry":100,
                        "h":self.GetSizeObject(self.JSON_IMAGES["player_images"]["normal"])["h"],
-                       "w":self.GetSizeObject(self.JSON_IMAGES["player_images"]["normal"])["w"]
+                       "w":self.GetSizeObject(self.JSON_IMAGES["player_images"]["normal"])["w"],
+                       "sprite_now": {"side": "img", "index":0, "max":1}
                        }
 
     def CreateObject(self,x: int, y: int, img: str, name: str = None, up: bool = False, rigid: bool = False):
@@ -81,7 +86,6 @@ class Game():
     # w2 = 3,
     # h2 = 6
     def IsClash(self,x: int, y: int, h: int, w: int,x2: int, y2: int, h2: int, w2: int):
-        #(x >= x2 - w2 + w and x - w <= x2 + w2 - w)
         if (y >= y2 - h2 + h and y - h <= y2 + h2 - h) or (y2 >= y - h + h2 and y2 - h2 <= y + h - h2):
             if (x >= x2 - w2 + w and x - w <= x2 + w2 - w) or (x2 >= x - w + w2 and x2 - w2 <= x + w - w2):
                 return True
@@ -89,14 +93,18 @@ class Game():
         return False
 #
     def CheckKeysObjects(self):
+        self.WALK_LEFT_PLAYER = False
+        self.WALK_RIGHT_PLAYER = False
+        self.WALK_UP_PLAYER = False
+        self.WALK_DOWN_PLAYER = False
         if key("a"):
-            self.INDEX_MOVE_OBJECTS_X += 1
-        if key("d"):
-            self.INDEX_MOVE_OBJECTS_X -= 1
+            self.WALK_LEFT_PLAYER = True
+        elif key("d"):
+            self.WALK_RIGHT_PLAYER = True
         if key("w"):
-            self.INDEX_MOVE_OBJECTS_Y += 1
-        if key("s"):
-            self.INDEX_MOVE_OBJECTS_Y -= 1
+            self.WALK_UP_PLAYER = True
+        elif key("s"):
+            self.WALK_DOWN_PLAYER = True
         if key("f3"):
             self.OPTIONS_SHOW = not self.OPTIONS_SHOW
 
@@ -178,17 +186,44 @@ class Game():
              ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],] """
     def CheckAll(self):
 
-        self.INDEX_MOVE_OBJECTS_X = 0
-        self.INDEX_MOVE_OBJECTS_Y = 0
+
         self.CheckKeysObjects()  # check moves
         up_of_payer_objects = []
 
         for object_now in self.OBJECTS:#for in object don't up of player
+            if self.WALK_LEFT_PLAYER:
+                object_now["x"] += 1
 
+                if self.PLAYER["sprite_now"]["side"] != "walk_left":
+                    self.PLAYER["sprite_now"]["index"] = 0
+                    self.PLAYER["img"] = self.PLAYER["walk_left_sprites"][self.PLAYER["sprite_now"]["index"]]
+                else:
+                    if self.PLAYER["sprite_now"]["index"] >= self.PLAYER["sprite_now"]["max"]:
+                        self.PLAYER["sprite_now"]["index"] = 0
+                    else:
+                        self.PLAYER["img"] = self.PLAYER["walk_left_sprites"][self.PLAYER["sprite_now"]["index"]]
+                        self.PLAYER["sprite_now"]["index"] += 1
+                self.PLAYER["sprite_now"]["side"] = "walk_left"
+                self.PLAYER["img"] = self.PLAYER["walk_left_sprites"][self.PLAYER["sprite_now"]["index"]]
 
+            elif self.WALK_RIGHT_PLAYER:
+                object_now["x"] -= 1
+                if self.PLAYER["sprite_now"]["side"] != "walk_right":
+                    self.PLAYER["sprite_now"]["index"] = 0
+                    self.PLAYER["img"] = self.PLAYER["walk_left_sprites"][self.PLAYER["sprite_now"]["index"]]
+                else:
+                    if self.PLAYER["sprite_now"]["index"] >= self.PLAYER["sprite_now"]["max"]:
+                        self.PLAYER["sprite_now"]["index"] = 0
+                    else:
+                        self.PLAYER["img"] = self.PLAYER["walk_right_sprites"][self.PLAYER["sprite_now"]["index"]]
+                        self.PLAYER["sprite_now"]["index"] += 1
+                self.PLAYER["sprite_now"]["side"] = "walk_right"
+                self.PLAYER["img"] = self.PLAYER["walk_right_sprites"][self.PLAYER["sprite_now"]["index"]]
+            if self.WALK_UP_PLAYER:
+                object_now["y"] += 1
+            elif self.WALK_DOWN_PLAYER:
+                object_now["y"] -= 1
 
-            object_now["x"] += self.INDEX_MOVE_OBJECTS_X
-            object_now["y"] += self.INDEX_MOVE_OBJECTS_Y
 
             if object_now["up"] == True:
                 if not object_now["x"] < 0 and not object_now["y"] < 0:

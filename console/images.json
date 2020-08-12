@@ -715,7 +715,9 @@
       "."
     ]
   ],
-  "player_images": {"normal": " O\n'|'\n |\n", "walk_left": [], "walk_right":  []},
+  "player_images": {"normal": " O\n'|'\n |\n",
+    "walk_left": [" O\n'|'\n/|\n"," O\n'|'\n |\n"],
+    "walk_right":  [" O\n'|'\n |\\\n"," O\n'|'\n |\n"]},
   "grass_image": "'^'",
   "villager_image": "  {o}\n (00)\n |__|",
   "home_image": "  __\n _||_\n_-||-_\n|====|"
