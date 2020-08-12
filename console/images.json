@@ -715,5 +715,8 @@
       "."
     ]
   ],
-  "player_image": " O\n'|'\n |\n"
+  "player_image": " O\n'|'\n |\n",
+  "grass_image": "'^'",
+  "villager_image": "  {o}\n (  )\n |__|",
+  "home_image": "  __\n _||_\n_-||-_\n|====|"
 }
