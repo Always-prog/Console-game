@@ -724,5 +724,7 @@
   "eat": {"meat": {"default_image":" \n @\\ \n \\/", "minimize_image": "@>"}},
   "dead_image": "$$$$$$$$$$$$\n$ YOU DEAD $ \n$$$$$$$$$$$$",
   "inventory_image": "^^^^^^^^^^^^^\n|#0|#1|#2|#3|\n_____________",
-  "inventory_icons": {"ghost_item": "--\n|00|\n--","selected_item": "^^\n#00#\n__"}
+  "inventory_icons": {"ghost_item": "--\n|00|\n--","selected_item": "^^\n#00#\n__"},
+  "message_up": "#-#-#-#-#-#-#-#\n|press_F_to_up|\n#-#-#-#-#-#-#-#",
+  "message_cant_up": "#-#-#-#-#-#-#-#-#-#-#-#\n|inventory_is_not_space|\n#-#-#-#-#-#-#-#-#-#-#-#"
 }

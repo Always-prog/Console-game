@@ -181,11 +181,18 @@ class Game():
             self.UseEat()
         if key("esc"):
             exit()
+
+    def InventoryIsSpace(self):
+        for inventory_item in range(len(self.PLAYER["inventory"])):
+            if self.PLAYER["inventory"][str(inventory_item)]["status"] == "space":
+                return True
+        return False
     def UseEat(self):
         for inventory_item in range(len(self.PLAYER["inventory"])):
             if self.PLAYER["inventory"][str(inventory_item)]["name"] == "meat":
-                self.PLAYER["hungry"] += self.ADD_HUNGRY_COUNT
-                self.DestroyItem(index_item=str(inventory_item))
+                if self.PLAYER["hungry"] + self.ADD_HUNGRY_COUNT < 100.0:
+                    self.PLAYER["hungry"] += self.ADD_HUNGRY_COUNT
+                    self.DestroyItem(index_item=str(inventory_item))
     def MinimizeHungry(self):
         self.PLAYER["hungry"] -= 2
     def DrawAll(self):
@@ -330,12 +337,11 @@ class Game():
                 )
 
                 if is_clash:
-                    if self.PLAYER["hungry"] + self.ADD_HUNGRY_COUNT < 100.0:
-                        self.SetImage(x=7, y=0, image="#############\npress F to up\n#############")
+                    self.SetImage(x=7, y=0, image=self.JSON_IMAGES["message_up"])
+                    if self.InventoryIsSpace():
                         if self.KEY_F:
                             try:
                                 if self.PLAYER["hungry"] + self.ADD_HUNGRY_COUNT < 100.0:#if hungry is not more on 100
-                                    self.PLAYER["hungry"] += self.ADD_HUNGRY_COUNT
                                     self.CreateInventoryObject(object_for_paste=self.OBJECTS[object_now])
                                     del self.OBJECTS[object_now]
                                     break
@@ -345,7 +351,7 @@ class Game():
                             except IndexError:
                                 pass
                     else:
-                        self.SetImage(x=7, y=0, image="#################\n#You don't can up#\n#################")
+                        self.SetImage(x=7, y=0, image=self.JSON_IMAGES["message_cant_up"])
 
 
 
