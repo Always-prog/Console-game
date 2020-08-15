@@ -721,6 +721,8 @@
   "grass_image": "'^'",
   "villager_image": "  {o}\n (00)\n |__|",
   "home_image": "  __\n _||_\n_-||-_\n|====|",
-  "eat": {"meat": " \n(;)\\\n \\/"},
-  "dead_image": "$$$$$$$$$$$$\n$ YOU DEAD $ \n$$$$$$$$$$$$"
+  "eat": {"meat": {"default_image":" \n @\\ \n \\/", "minimize_image": "@>"}},
+  "dead_image": "$$$$$$$$$$$$\n$ YOU DEAD $ \n$$$$$$$$$$$$",
+  "inventory_image": "^^^^^^^^^^^^^\n|#0|#1|#2|#3|\n_____________",
+  "inventory_icons": {"ghost_item": "--\n|00|\n--","selected_item": "^^\n#00#\n__"}
 }

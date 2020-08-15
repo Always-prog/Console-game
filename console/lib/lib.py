@@ -4,8 +4,8 @@ import threading
 from random import randint
 from time import sleep
 from uuid import uuid4
-from keyboard import is_pressed as key
-from apscheduler.schedulers.blocking import BlockingScheduler
+from keyboard import is_pressed as key, KEY_DOWN as key_down
+
 from sys import exit
 
 class Game():
@@ -15,22 +15,25 @@ class Game():
                  objects: list = [],
                  ):
         self.DIR_IMAGES = dir_images
+        self.JSON_IMAGES = json.load(open(self.DIR_IMAGES,"r"))
         self.BACKGROUND = background
         self.BACKGROUND_X = 40
         self.BACKGROUND_Y = 17
         self.OBJECTS = objects
         self.MINIMIZE_HUNGRY_COUNT = 0.02
-        self.ADD_HUNGRY_COUNT = 2.5
+        self.ADD_HUNGRY_COUNT = 10.0
         self.OUTPUT_IMAGE = self.BACKGROUND
         self.OPTIONS_SHOW = True
         self.OPTIONS_VIEW = "------\n|000|\n------"
         self.OPTIONS_IMAGE = "------\n|000|\n------"
-        self.JSON_IMAGES = json.load(open(self.DIR_IMAGES,"r"))
+        self.INVENTORY_IMAGE = self.JSON_IMAGES["inventory_image"]
         self.WALK_LEFT_PLAYER = False
         self.WALK_RIGHT_PLAYER = False
         self.WALK_UP_PLAYER = False
         self.WALK_DOWN_PLAYER = False
+        self.KEY_F = False
         self.PLAYER = {"img": self.JSON_IMAGES["player_images"]["normal"],
+                       "image_normal":self.JSON_IMAGES["player_images"]["normal"],
                        "x": 15,
                        "y": 8,
                        "walk_left_sprites":self.JSON_IMAGES["player_images"]["walk_left"],
@@ -38,10 +41,44 @@ class Game():
                        "hungry":100.00,
                        "h":self.GetSizeObject(self.JSON_IMAGES["player_images"]["normal"])["h"],
                        "w":self.GetSizeObject(self.JSON_IMAGES["player_images"]["normal"])["w"],
-                       "sprite_now": {"side": "img", "index":0, "max":1}
+                       "sprite_now": {"side": "img", "index":0, "max":1},
+                       "inventory_must_update": True,
+                       "selected_now":"0",
+                       "default_inventory_item":lambda num:{"status":"space","name":"#"+str(num), "minimize_image":"#"+str(num)},
+                       "inventory":{
+                           "0":{"status":"space","name":"#0", "minimize_image":"#0"},
+                           "1":{"status":"space","name":"#1", "minimize_image":"#1"},
+                           "2":{"status":"space","name":"#2", "minimize_image":"#2"},
+                           "3":{"status":"space","name":"#3", "minimize_image":"#3"},
                        }
+                       }
+    def CreateInventoryObject(self,object_for_paste: dict):
+        for inventory_item in range(len(self.PLAYER["inventory"])):
+            object_for_paste.update({"minimize_image":object_for_paste["data"]["minimize_image"]})
+            if self.PLAYER["inventory"][str(inventory_item)]["status"] == "space":
+                self.PLAYER["inventory"][str(inventory_item)] = object_for_paste
+                self.PLAYER["inventory"][str(inventory_item)]["status"] = object_for_paste["name"]
+                self.PLAYER["inventory_must_update"] = True
+                return True
+            else:
+                self.PLAYER["inventory_must_update"] = False
+    def InventoryView(self):
+        if self.PLAYER["inventory_must_update"]:
+            list_image = list(self.INVENTORY_IMAGE)
+            list_image[15] = list(self.PLAYER["inventory"]["0"]["minimize_image"])[0]
+            list_image[16] = list(self.PLAYER["inventory"]["0"]["minimize_image"])[1]
 
-    def CreateObject(self,x: int, y: int, img: str, name: str = None, up: bool = False, rigid: bool = False):
+            list_image[18] = list(self.PLAYER["inventory"]["1"]["minimize_image"])[0]
+            list_image[19] = list(self.PLAYER["inventory"]["1"]["minimize_image"])[1]
+
+            list_image[21] = list(self.PLAYER["inventory"]["2"]["minimize_image"])[0]
+            list_image[22] = list(self.PLAYER["inventory"]["2"]["minimize_image"])[1]
+
+            list_image[24] = list(self.PLAYER["inventory"]["3"]["minimize_image"])[0]
+            list_image[25] = list(self.PLAYER["inventory"]["3"]["minimize_image"])[1]
+            self.INVENTORY_IMAGE = "".join(list_image)
+        self.SetImage(x=0,y=15,image=self.INVENTORY_IMAGE)
+    def CreateObject(self,x: int, y: int, img: str, name: str = None, up: bool = False, rigid: bool = False, data: dict = {}):
         size_object = self.GetSizeObject(img=img)
         self.OBJECTS.append(
             {"name": name,
@@ -52,6 +89,7 @@ class Game():
              "h":size_object["h"],
              "w":size_object["w"],
              "id":uuid4().hex,
+             "data":data,
              "img": img}
         )
     def SetImage(self,x: int, y: int, image: str):
@@ -84,26 +122,33 @@ class Game():
             return {"w": max(weights), "h":len(h)}
         except ValueError:
             return {"w": 0, "h":0}
+    def QuitItem(self):
+        for inventory_item in range(len(self.PLAYER["inventory"])):
+            if self.PLAYER["inventory"][str(inventory_item)]["status"] != "space":
+                self.CreateObject(
+                    img=self.PLAYER["inventory"][str(inventory_item)]["img"],
+                    x=self.PLAYER["x"],
+                    y=self.PLAYER["y"],
+                    name=self.PLAYER["inventory"][str(inventory_item)]["name"],
+                    data=self.PLAYER["inventory"][str(inventory_item)]["data"],
+                )
+                self.DestroyItem(index_item=str(inventory_item))
+                break
+    def DestroyItem(self,index_item: str):
+        item = self.PLAYER["inventory"][index_item]
+        self.PLAYER["inventory"][index_item] = self.PLAYER["default_inventory_item"](index_item)
+        self.PLAYER["inventory_must_update"] = True
+        return item
     def SpawnEat(self):
         for meat in range(4):
             self.CreateObject(
                 x=randint(0,self.BACKGROUND_X),
                 y=randint(0,self.BACKGROUND_Y),
-                img=self.JSON_IMAGES["eat"]["meat"],
+                data={"minimize_image":self.JSON_IMAGES["eat"]["meat"]["minimize_image"]},
+                img=self.JSON_IMAGES["eat"]["meat"]["default_image"],
                 name="meat"
             )
 
-    # X = 15,
-    # Y  = 8,
-
-    # X2 = 15,
-    # Y2 = 7
-
-    # w = 3,
-    # h = 3,
-
-    # w2 = 3,
-    # h2 = 6
     def IsClash(self,x: int, y: int, h: int, w: int,x2: int, y2: int, h2: int, w2: int):
         if (y >= y2 - h2 + h and y - h <= y2 + h2 - h) or (y2 >= y - h + h2 and y2 - h2 <= y + h - h2):
             if (x >= x2 - w2 + w and x - w <= x2 + w2 - w) or (x2 >= x - w + w2 and x2 - w2 <= x + w - w2):
@@ -126,9 +171,21 @@ class Game():
             self.WALK_DOWN_PLAYER = True
         if key("f3"):
             self.OPTIONS_SHOW = not self.OPTIONS_SHOW
-        if key("q"):
-
+        if key("f"):
+            self.KEY_F = True
+        else:
+            self.KEY_F= False
+        if key("x"):
+            self.QuitItem()
+        if key("e"):
+            self.UseEat()
+        if key("esc"):
             exit()
+    def UseEat(self):
+        for inventory_item in range(len(self.PLAYER["inventory"])):
+            if self.PLAYER["inventory"][str(inventory_item)]["name"] == "meat":
+                self.PLAYER["hungry"] += self.ADD_HUNGRY_COUNT
+                self.DestroyItem(index_item=str(inventory_item))
     def MinimizeHungry(self):
         self.PLAYER["hungry"] -= 2
     def DrawAll(self):
@@ -209,6 +266,7 @@ class Game():
              ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],] """
     def CheckAll(self):
         self.CheckKeysObjects()  # check moves
+
         up_of_payer_objects = []
         items_objects = []
         if self.PLAYER["hungry"] <= 0.0:
@@ -219,6 +277,7 @@ class Game():
                 self.OBJECTS[object_now]
             except IndexError:
                 continue
+            self.PLAYER["img"] = self.PLAYER["image_normal"]
             if self.WALK_LEFT_PLAYER:
                 self.OBJECTS[object_now]["x"] += 1
                 if self.PLAYER["sprite_now"]["side"] != "walk_left":
@@ -269,16 +328,26 @@ class Game():
                     h2=self.PLAYER["h"],
                     w2=self.PLAYER["w"],
                 )
-                if is_clash:
-                    if key("f") and self.PLAYER["hungry"] < 100.0:
-                        try:
-                            del self.OBJECTS[object_now]
-                            self.PLAYER["hungry"] += self.ADD_HUNGRY_COUNT
-                            break
-                        except IndexError:
-                            pass
 
-                    self.SetImage(x=7, y=0,image="#############\npress F to up\n#############")
+                if is_clash:
+                    if self.PLAYER["hungry"] + self.ADD_HUNGRY_COUNT < 100.0:
+                        self.SetImage(x=7, y=0, image="#############\npress F to up\n#############")
+                        if self.KEY_F:
+                            try:
+                                if self.PLAYER["hungry"] + self.ADD_HUNGRY_COUNT < 100.0:#if hungry is not more on 100
+                                    self.PLAYER["hungry"] += self.ADD_HUNGRY_COUNT
+                                    self.CreateInventoryObject(object_for_paste=self.OBJECTS[object_now])
+                                    del self.OBJECTS[object_now]
+                                    break
+                                else:
+                                    pass#player don't can to eat more
+
+                            except IndexError:
+                                pass
+                    else:
+                        self.SetImage(x=7, y=0, image="#################\n#You don't can up#\n#################")
+
+
 
             if self.OBJECTS[object_now]["up"] == True:
                 if not self.OBJECTS[object_now]["x"] < 0 and not self.OBJECTS[object_now]["y"] < 0:
@@ -297,9 +366,8 @@ class Game():
             except IndexError:
                 continue
 
-
-
-
+        #default checks
+        self.InventoryView()
         if self.OPTIONS_SHOW:
             self.OPTIONS_VIEW = self.OPTIONS_IMAGE.replace("000",str(self.PLAYER["hungry"]))
             self.SetImage(x=32, y=0, image=self.OPTIONS_VIEW)
@@ -308,7 +376,8 @@ class Game():
         # scheduler to start spawn eat, and start minimize hungry
         while True:
             sleep(4)
-            self.SpawnEat()
+            if len([i for i in self.OBJECTS if i["name"] == "meat"]) < 10:
+                self.SpawnEat()
             sleep(1)
             self.MinimizeHungry()
 
@@ -317,7 +386,7 @@ class Game():
         while True:  # global
             self.CheckAll()
             self.DrawAll()
-            sleep(0.1)
+            sleep(0.01)
     def run(self):
         proc1 = threading.Thread(target=self.Start)
         proc1.start()
