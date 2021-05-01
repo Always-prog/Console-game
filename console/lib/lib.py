@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import threading
 from random import randint
 from time import sleep
@@ -37,6 +38,9 @@ class Game():
         self.WALK_UP_PLAYER = False
         self.WALK_DOWN_PLAYER = False
         self.KEY_F = False
+        self.SERVER_CONNECTIONS = []
+        self.SERVER_SOCK = None
+        self.I_AM_SERVER = False
         self.CHAT_THREAD = None
         self.NOW_TYPING_TEXT = ""
         self.CHAT = [
@@ -69,7 +73,8 @@ class Game():
                            "1":{"status":"space","name":"#1", "minimize_image":"#1"},
                            "2":{"status":"space","name":"#2", "minimize_image":"#2"},
                            "3":{"status":"space","name":"#3", "minimize_image":"#3"},
-                       }
+                       },
+                       "name":"unknown"
                        }
     def CreateInventoryObject(self,object_for_paste: dict):
         for inventory_item in range(len(self.PLAYER["inventory"])):
@@ -214,16 +219,102 @@ class Game():
             pressed_key = msvcrt.getche()  # getch() will not echo key to window if that is what you want
             if pressed_key == b'\r':  # b'\r' is enter or return
                 break
-            elif pressed_key == b'\x08':  # backspace
+            elif pressed_key == b'\x08' and len(self.NOW_TYPING_TEXT.replace(b'\x08',b"")) <= 0:  # backspace
                 continue
             else:
                 self.NOW_TYPING_TEXT += pressed_key
 
         self.CHAT.append({
-            "player_name": "Stepan123",
+            "player_name": self.PLAYER.get("name","unknown"),
             "text": self.NOW_TYPING_TEXT.decode(
             'utf-8')
         })
+        self.SendMessages(self.NOW_TYPING_TEXT)
+
+
+    def OpenServer(self):
+        self.SERVER_SOCK = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.SERVER_SOCK.bind(('localhost', 9090))
+        self.SERVER_SOCK.listen(2)
+        self.SERVER_SOCK.settimeout(0.1)
+
+        up_c = threading.Thread(target=self.UpdateConnections)
+        get_m = threading.Thread(target=self.GetMessages__server)
+        up_c.start()
+        get_m.start()
+        self.CHAT.append(
+            {
+                "player_name": "Console",
+                "text": "Successfully created"
+            }
+        )
+        self.I_AM_SERVER = True
+    def ConnectToServer(self):
+        self.SERVER_SOCK = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.SERVER_SOCK.connect(('localhost', 9090))
+        self.SERVER_SOCK.settimeout(0.1)
+
+        self.CHAT.append(
+            {
+                "player_name": "Console",
+                "text": "Successfully connected"
+            }
+        )
+
+        g_msgs = threading.Thread(target=self.GetMessages__client)
+        g_msgs.start()
+        self.I_AM_SERVER = False
+
+    def UpdateConnections(self):
+        while True:
+            try:
+                connection, address = self.SERVER_SOCK.accept()
+            except socket.timeout:
+                pass
+            else:
+                self.SERVER_CONNECTIONS.append({"c": connection, "a": address})
+                connection.settimeout(0.2)
+
+    def GetMessages__client(self):
+        while True:
+            try:
+                buf = self.SERVER_SOCK.recv(64)
+            except socket.timeout:
+                continue
+            else:
+                self.CHAT.append(
+                    {
+                        "player_name": "server",
+                        "text": buf.decode('utf-8')
+                    }
+                )
+    def GetMessages__server(self):
+        while True:
+            for conn in self.SERVER_CONNECTIONS:
+                try:
+                    buf = conn["c"].recv(64)
+                except socket.timeout:
+                    continue
+                else:
+
+                    self.CHAT.append(
+                        {
+                            "player_name": "client",
+                            "text": buf.decode('utf-8')
+                        }
+                    )
+
+
+    def SendMessages(self, bts):
+        if self.I_AM_SERVER:
+            for c in self.SERVER_CONNECTIONS:
+                c["c"].send(bts)
+        else:
+            self.SERVER_SOCK.send(bts)
+
+
+
 
 
 
