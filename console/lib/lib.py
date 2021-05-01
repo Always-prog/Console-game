@@ -209,7 +209,8 @@ class Game():
             self.OpenChat()
 
     def OpenChat(self):
-        self.ChatCheks()
+        c_c = threading.Thread(target=self.ChatCheks)
+        c_c.start()
     def ChatCheks(self):
 
         import msvcrt
@@ -223,18 +224,19 @@ class Game():
                 continue
             else:
                 self.NOW_TYPING_TEXT += pressed_key
-        self.NOW_TYPING_TEXT = self.NOW_TYPING_TEXT.decode(
-            'utf-8')[1:]
-        self.CHAT.append({
-            "player_name": self.PLAYER.get("name","unknown"),
-            "text": self.NOW_TYPING_TEXT
-        })
-        send_data = {
-            "p_n":self.PLAYER.get("name","unknown"),
-            "text":self.NOW_TYPING_TEXT
-        }
-        send_data_dump = json.dumps(send_data)
-        self.SendMessages(send_data_dump.encode("utf-8"))
+        if self.SERVER_SOCK:
+            self.NOW_TYPING_TEXT = self.NOW_TYPING_TEXT.decode(
+                'utf-8')[1:]
+            self.CHAT.append({
+                "player_name": self.PLAYER.get("name","unknown"),
+                "text": self.NOW_TYPING_TEXT
+            })
+            send_data = {
+                "p_n":self.PLAYER.get("name","unknown"),
+                "text":self.NOW_TYPING_TEXT
+            }
+            send_data_dump = json.dumps(send_data)
+            self.SendMessages(send_data_dump.encode("utf-8"))
 
 
     def OpenServer(self, ip: str = "localhost", port: int = 9090):
