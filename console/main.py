@@ -1,5 +1,6 @@
 from lib.lib import Game
 import json
+from sys import exit
 json_images = json.load(open("images.json","r"))
 try:
     player_stats = json.load(open("player.json","r"))
@@ -30,7 +31,18 @@ game = Game()
 if server and my_server:
     game.OpenServer()
 elif server and not my_server:
-    game.ConnectToServer()
+    address = input("Input address of server: ")
+    if address:
+        try:
+            port = address.split(":")[1]
+            ip = address.split(":")[0]
+        except:
+            print("Incorrect address")
+            input()
+            exit()
+        game.ConnectToServer(ip=ip,port=port)
+    else:
+        game.ConnectToServer()
 game.PLAYER.update({"name":player_stats.get("name")})
 game.CreateObject(
     name="grass",
