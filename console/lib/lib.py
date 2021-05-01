@@ -232,10 +232,10 @@ class Game():
         self.SendMessages(self.NOW_TYPING_TEXT)
 
 
-    def OpenServer(self):
+    def OpenServer(self, ip: str = "localhost", port: int = 9090):
         self.SERVER_SOCK = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.SERVER_SOCK.bind(('localhost', 9090))
+        self.SERVER_SOCK.bind((ip, port))
         self.SERVER_SOCK.listen(2)
         self.SERVER_SOCK.settimeout(0.1)
 
@@ -250,15 +250,18 @@ class Game():
             }
         )
         self.I_AM_SERVER = True
-    def ConnectToServer(self):
+    def ConnectToServer(self, ip: str = "localhost", port: int = 9090):
         self.SERVER_SOCK = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.SERVER_SOCK.connect(('localhost', 9090))
+        try:
+            self.SERVER_SOCK.connect((ip, port))
+        except Exception:
+            print(f"Don't found server at ip {ip} and port {port}")
         self.SERVER_SOCK.settimeout(0.1)
 
         self.CHAT.append(
             {
                 "player_name": "Console",
-                "text": "Successfully connected"
+                "text": f"Successfully connected to {ip}:{port}"
             }
         )
 
