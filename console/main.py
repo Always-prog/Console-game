@@ -29,7 +29,19 @@ else:
 
 game = Game()
 if server and my_server:
-    game.OpenServer()
+    address = input("Input new address of server: ")
+    if address:
+        try:
+            port = address.split(":")[1]
+            ip = address.split(":")[0]
+        except:
+            print("Incorrect address")
+            input()
+            exit()
+        game.OpenServer(ip=ip,port=port)
+    else:
+        game.OpenServer()
+
 elif server and not my_server:
     address = input("Input address of server: ")
     if address:
