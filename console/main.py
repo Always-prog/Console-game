@@ -32,7 +32,7 @@ if server and my_server:
     address = input("Input new address of server: ")
     if address:
         try:
-            port = address.split(":")[1]
+            port = int(address.split(":")[1])
             ip = address.split(":")[0]
         except:
             print("Incorrect address")
@@ -46,7 +46,7 @@ elif server and not my_server:
     address = input("Input address of server: ")
     if address:
         try:
-            port = address.split(":")[1]
+            port = int(address.split(":")[1])
             ip = address.split(":")[0]
         except:
             print("Incorrect address")
