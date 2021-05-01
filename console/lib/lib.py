@@ -223,13 +223,18 @@ class Game():
                 continue
             else:
                 self.NOW_TYPING_TEXT += pressed_key
-
+        self.NOW_TYPING_TEXT = self.NOW_TYPING_TEXT.decode(
+            'utf-8')[1:]
         self.CHAT.append({
             "player_name": self.PLAYER.get("name","unknown"),
-            "text": self.NOW_TYPING_TEXT.decode(
-            'utf-8')
+            "text": self.NOW_TYPING_TEXT
         })
-        self.SendMessages(self.NOW_TYPING_TEXT)
+        send_data = {
+            "p_n":self.PLAYER.get("name","unknown"),
+            "text":self.NOW_TYPING_TEXT
+        }
+        send_data_dump = json.dumps(send_data)
+        self.SendMessages(send_data_dump.encode("utf-8"))
 
 
     def OpenServer(self, ip: str = "localhost", port: int = 9090):
@@ -286,10 +291,11 @@ class Game():
             except socket.timeout:
                 continue
             else:
+                data = json.loads(buf)
                 self.CHAT.append(
                     {
-                        "player_name": "server",
-                        "text": buf.decode('utf-8')
+                        "player_name": data.get("p_n", "unknown"),
+                        "text": data.get("text", "...")
                     }
                 )
     def GetMessages__server(self):
@@ -300,11 +306,12 @@ class Game():
                 except socket.timeout:
                     continue
                 else:
+                    data = json.loads(buf)
 
                     self.CHAT.append(
                         {
-                            "player_name": "client",
-                            "text": buf.decode('utf-8')
+                            "player_name": data.get("p_n","unknown"),
+                            "text": data.get("text","...")
                         }
                     )
 
